@@ -177,6 +177,149 @@ Authentications can be added to `~/.snowsql/config` file ([more](https://docs.sn
 $ chmod 700 ~/.snowsql/config
 ```
 
+## Getting Started
+
+Loading CSV files to Snowflake [Source](https://docs.snowflake.com/en/user-guide/tutorials/snowflake-in-20minutes#introduction).
+
+### Create Snowflake Objects 
+
+```sql
+-- Databse
+CREATE OR REPLACE DATABASE sf_tuts;
+
+SELECT CURRENT_DATABASE(), CURRENT_SCHEMA();
+
+-- Table
+CREATE OR REPLACE TABLE emp_basic (
+   first_name STRING ,
+   last_name STRING ,
+   email STRING ,
+   streetaddress STRING ,
+   city STRING ,
+   start_date DATE
+   );
+
+-- Warehouse
+CREATE OR REPLACE WAREHOUSE sf_tuts_wh WITH
+   WAREHOUSE_SIZE='X-SMALL'
+   AUTO_SUSPEND = 180
+   AUTO_RESUME = TRUE
+   INITIALLY_SUSPENDED=TRUE;
+
+SELECT CURRENT_WAREHOUSE();
+```
+
+### Stage Data Files
+
+Sample CSV files:
+
+```shell
+cd /tmp
+wget https://docs.snowflake.com/en/_downloads/34f4a66f56d00340f8f7a92acaccd977/getting-started.zip
+unzip getting-started.zip
+ls
+# employees01.csv  employees02.csv  employees03.csv  employees04.csv  employees05.csv  getting-started.zip
+```
+
+Stage sample files:
+
+```sql
+PUT file:///tmp/employees0*.csv @sf_tuts.public.%emp_basic;
+```
+
+```
++-----------------+--------------------+-------------+-------------+--------------------+--------------------+----------+---------+
+| source          | target             | source_size | target_size | source_compression | target_compression | status   | message |
+|-----------------+--------------------+-------------+-------------+--------------------+--------------------+----------+---------|
+| employees01.csv | employees01.csv.gz |         370 |         304 | NONE               | GZIP               | UPLOADED |         |
+| employees02.csv | employees02.csv.gz |         364 |         288 | NONE               | GZIP               | UPLOADED |         |
+| employees03.csv | employees03.csv.gz |         407 |         304 | NONE               | GZIP               | UPLOADED |         |
+| employees04.csv | employees04.csv.gz |         375 |         304 | NONE               | GZIP               | UPLOADED |         |
+| employees05.csv | employees05.csv.gz |         404 |         304 | NONE               | GZIP               | UPLOADED |         |
++-----------------+--------------------+-------------+-------------+--------------------+--------------------+----------+---------+
+5 Row(s) produced. Time Elapsed: 1.708s
+```
+
+List the staged files:
+```sql
+LIST @sf_tuts.public.%emp_basic;
+```
+
+```
++--------------------+------+----------------------------------+-------------------------------+
+| name               | size | md5                              | last_modified                 |
+|--------------------+------+----------------------------------+-------------------------------|
+| employees01.csv.gz |  304 | e03cfcf9e190fd23d62ae8d374bced28 | Wed, 18 Dec 2024 03:27:11 GMT |
+| employees02.csv.gz |  288 | d5fe7c0ccacebe501c9fa79db6f7cd37 | Wed, 18 Dec 2024 03:27:10 GMT |
+| employees03.csv.gz |  304 | a89fe832a955cb2a6c0d8dce3c3b7b18 | Wed, 18 Dec 2024 03:27:11 GMT |
+| employees04.csv.gz |  304 | bee9064100fd3f936ebde7cdca060e6e | Wed, 18 Dec 2024 03:27:11 GMT |
+| employees05.csv.gz |  304 | ff0b252271181797e89070371e9a0f8a | Wed, 18 Dec 2024 03:27:11 GMT |
++--------------------+------+----------------------------------+-------------------------------+
+5 Row(s) produced. Time Elapsed: 0.200s
+```
+
+### Copy Data into Target Table
+
+```sql
+COPY INTO emp_basic
+  FROM @%emp_basic
+  FILE_FORMAT = (type = csv field_optionally_enclosed_by='"')
+  PATTERN = '.*employees0[1-5].csv.gz'
+  ON_ERROR = 'skip_file';
+```
+
+```
++--------------------+--------+-------------+-------------+-------------+-------------+-------------+------------------+-----------------------+-------------------------+
+| file               | status | rows_parsed | rows_loaded | error_limit | errors_seen | first_error | first_error_line | first_error_character | first_error_column_name |
+|--------------------+--------+-------------+-------------+-------------+-------------+-------------+------------------+-----------------------+-------------------------|
+| employees04.csv.gz | LOADED |           5 |           5 |           1 |           0 | NULL        |             NULL |                  NULL | NULL                    |
+| employees03.csv.gz | LOADED |           5 |           5 |           1 |           0 | NULL        |             NULL |                  NULL | NULL                    |
+| employees05.csv.gz | LOADED |           5 |           5 |           1 |           0 | NULL        |             NULL |                  NULL | NULL                    |
+| employees01.csv.gz | LOADED |           5 |           5 |           1 |           0 | NULL        |             NULL |                  NULL | NULL                    |
+| employees02.csv.gz | LOADED |           5 |           5 |           1 |           0 | NULL        |             NULL |                  NULL | NULL                    |
++--------------------+--------+-------------+-------------+-------------+-------------+-------------+------------------+-----------------------+-------------------------+
+5 Row(s) produced. Time Elapsed: 2.351s
+```
+
+### Query Loaded Data
+
+```sql
+SELECT * FROM emp_basic;
+```
+
+```
++------------+--------------+---------------------------+-----------------------------+--------------------+------------+
+| FIRST_NAME | LAST_NAME    | EMAIL                     | STREETADDRESS               | CITY               | START_DATE |
+|------------+--------------+---------------------------+-----------------------------+--------------------+------------|
+| Wallis     | Sizey        | wsizeyf@sf_tuts.com       | 36761 American Lane         | Taibao             | 2016-12-30 |
+| Di         | McGowran     | dmcgowrang@sf_tuts.com    | 1856 Maple Lane             | Banjar Bengkelgede | 2017-04-22 |
+| Carson     | Bedder       | cbedderh@sf_tuts.co.au    | 71 Clyde Gallagher Place    | Leninskoye         | 2017-03-29 |
+| Dana       | Avory        | davoryi@sf_tuts.com       | 2 Holy Cross Pass           | Wenlin             | 2017-05-11 |
+| Ronny      | Talmadge     | rtalmadgej@sf_tuts.co.uk  | 588 Chinook Street          | Yawata             | 2017-06-02 |
+| Althea     | Featherstone | afeatherstona@sf_tuts.com | 8172 Browning Street, Apt B | Calatrava          | 2017-07-12 |
+| Hollis     | Anneslie     | hanneslieb@sf_tuts.com    | 3248 Roth Park              | Aleysk             | 2017-11-16 |
+| Betti      | Cicco        | bciccoc@sf_tuts.com       | 121 Victoria Junction       | Sinegor'ye         | 2017-06-22 |
+| Brendon    | Durnall      | bdurnalld@sf_tuts.com     | 26814 Weeping Birch Place   | Sabadell           | 2017-11-14 |
+| Kylila     | MacConnal    | kmacconnale@sf_tuts.com   | 04 Valley Edge Court        | Qingshu            | 2017-06-22 |
+| Arlene     | Davidovits   | adavidovitsk@sf_tuts.com  | 7571 New Castle Circle      | Meniko             | 2017-05-03 |
+| Violette   | Shermore     | vshermorel@sf_tuts.com    | 899 Merchant Center         | Troitsk            | 2017-01-19 |
+| Ron        | Mattys       | rmattysm@sf_tuts.com      | 423 Lien Pass               | Bayaguana          | 2017-11-15 |
+| Shurlocke  | Oluwatoyin   | soluwatoyinn@sf_tuts.com  | 40637 Portage Avenue        | Semënovskoye       | 2017-09-12 |
+| Granger    | Bassford     | gbassfordo@sf_tuts.co.uk  | 6 American Ash Circle       | Kardítsa           | 2016-12-30 |
+| Lem        | Boissier     | lboissier@sf_tuts.com     | 3002 Ruskin Trail           | Shikārpur          | 2017-08-25 |
+| Iain       | Hanks        | ihanks1@sf_tuts.com       | 2 Pankratz Hill             | Monte-Carlo        | 2017-12-10 |
+| Avo        | Laudham      | alaudham2@sf_tuts.com     | 6948 Debs Park              | Prażmów            | 2017-10-18 |
+| Emili      | Cornner      | ecornner3@sf_tuts.com     | 177 Magdeline Avenue        | Norrköping         | 2017-08-13 |
+| Harrietta  | Goolding     | hgoolding4@sf_tuts.com    | 450 Heath Trail             | Osielsko           | 2017-11-27 |
+| Nyssa      | Dorgan       | ndorgan5@sf_tuts.com      | 7 Tomscot Way               | Pampas Chico       | 2017-04-13 |
+| Catherin   | Devereu      | cdevereu6@sf_tuts.co.au   | 535 Basil Terrace           | Magapit            | 2016-12-17 |
+| Grazia     | Glaserman    | gglaserman7@sf_tuts.com   | 162 Debra Lane              | Shiquanhe          | 2017-06-06 |
+| Ivett      | Casemore     | icasemore8@sf_tuts.com    | 84 Holmberg Pass            | Campina Grande     | 2017-03-29 |
+| Cesar      | Hovie        | chovie9@sf_tuts.com       | 5 7th Pass                  | Miami              | 2016-12-21 |
++------------+--------------+---------------------------+-----------------------------+--------------------+------------+
+25 Row(s) produced. Time Elapsed: 1.841s
+```
+
 
 
 
