@@ -320,6 +320,13 @@ SELECT * FROM emp_basic;
 25 Row(s) produced. Time Elapsed: 1.841s
 ```
 
+&nbsp;
+
+<figcaption>Screenshot of the last query via snowsql, running on a Linux (Ubuntu) Docker container.</figcaption>
+
+![](query-loaded-data.png)
+
+
 
 
 
