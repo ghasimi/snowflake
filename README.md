@@ -103,8 +103,14 @@ Delete this key from the keyring? (y/N) y
 # install SnowSQL
 bash snowsql-1.3.2-linux_x86_64.bash
 
+# create an alias
+echo -e "\nalias snowsql='~/bin/snowsql'" >>  ~/.bashrc
+
+# apply changes
+. ~/.bashrc 
+
 # Check version
-~/bin/snowsql -v
+snowsql -v
 # Version: 1.3.2
 ```
 
@@ -141,7 +147,9 @@ Open a new terminal session to make the updated PATH take effect.
 
 See the Snowflake documentation <https://docs.snowflake.net/manuals/user-guide/snowsql.html> for more information.
 
-root@976ee267c662:~# ~/bin/snowsql -v
+root@976ee267c662:~# echo -e "\nalias snowsql='~/bin/snowsql'" >>  ~/.bashrc
+root@976ee267c662:~# . ~/.bashrc 
+root@976ee267c662:~# snowsql -v
 Version: 1.3.2
 ```
 
