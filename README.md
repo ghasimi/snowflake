@@ -49,3 +49,15 @@ pub  rsa4096/630D9F3CAB551AF3 2022-09-20 Snowflake Computing (Snowflake Computin
 Delete this key from the keyring? (y/N) y
 ```
 
+### 2: Install
+
+```shell
+# install unzip if not installed
+apt-get install zip unzip
+
+# install SnowSQL
+bash snowsql-1.3.2-linux_x86_64.bash
+```
+
+
+
