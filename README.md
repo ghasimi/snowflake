@@ -155,6 +155,32 @@ Version: 1.3.2
 
 </details>
 
+### 4. Log In
+
+```shell
+snowsql -a <accountname> -u <username>
+# prompt for password
+```
+
+`accountname` is the tricky part. Example: `id12345.ca-central-1.aws` where `id12345` is the locater. All information available via ADMIN/Account menu ([more](https://docs.snowflake.com/en/user-guide/admin-account-identifier)). 
+
+Output:
+```
+* SnowSQL * v1.3.2
+Type SQL statements or !help
+snowflkd#COMPUTE_WH@(no database).(no schema)>
+```
+
+Authentications can be added to `~/.snowsql/config` file ([more](https://docs.snowflake.com/en/user-guide/snowsql-config)). Since password will be in plain text, this enhances the security by limiting the read permission to you:
+
+```
+$ chmod 700 ~/.snowsql/config
+```
+
+
+
+
+
 
 
 
